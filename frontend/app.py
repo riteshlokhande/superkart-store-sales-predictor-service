@@ -5,7 +5,7 @@ import pandas as pd
 import requests
 
 # Backend service URL configured for the Docker bridge network
-BACKEND_URL = "http://backend:5000"
+BACKEND_URL = "http://backend:7860"
 
 st.set_page_config(
     page_title="SuperKart Sales Predictor", page_icon="🛒", layout="wide"
