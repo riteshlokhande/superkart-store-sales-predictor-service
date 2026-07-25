@@ -5,7 +5,7 @@ import pandas as pd
 import requests
 
 # Backend service URL configured for the Docker bridge network
-BACKEND_URL = "http://backend:7860"
+BACKEND_URL = "http://backend:5000"
 
 st.set_page_config(
     page_title="SuperKart Sales Predictor", page_icon="🛒", layout="wide"
@@ -27,33 +27,43 @@ with tabs[0]:
       " inferences update dynamically in real-time."
   )
 
-  col1, col2 = st.columns(2)
+  # 3-column layout for a uniform and balanced dashboard appearance
+  col1, col2, col3 = st.columns(3)
 
   with col1:
-    product_id = st.text_input(
-        "Product ID",
-        value="FDW58",
-        help=(
-            "Prefix determines Product Category (FD: Food, DR: Drinks, NC:"
-            " Non-Consumable)"
-        ),
+    st.subheader("Product Attributes")
+    pid_prefix = st.selectbox(
+        "Product ID Prefix",
+        options=["FD", "DR", "NC"],
+        format_func=lambda x: {
+            "FD": "FD (Food)",
+            "DR": "DR (Drinks)",
+            "NC": "NC (Non-Consumable)",
+        }[x],
+        help="Prefix determines Product Category",
     )
     product_weight = st.number_input(
-        "Product Weight", min_value=0.0, max_value=50.0, value=12.66, step=0.01
+        "Product Weight", min_value=0.0, max_value=50.0, value=15.30, step=0.01
     )
     product_sugar_content = st.selectbox(
-        "Product Sugar Content", ["Low Sugar", "Regular", "No Sugar"]
+        "Product Sugar Content", ["Regular", "Low Sugar", "No Sugar"]
     )
+
+  with col2:
+    st.subheader("Pricing & Classification")
+    # Unrounded Product Allocated Area (retaining exact precision up to 6 decimal places)
     product_allocated_area = st.number_input(
         "Product Allocated Area",
         min_value=0.0,
         max_value=1.0,
-        value=0.027,
-        step=0.001,
+        value=0.054321,
+        step=0.000001,
+        format="%.6f",
     )
     product_type = st.selectbox(
         "Product Type",
         [
+            "Soft Drinks",
             "Frozen Foods",
             "Dairy",
             "Canned",
@@ -65,49 +75,46 @@ with tabs[0]:
             "Breads",
             "Hard Drinks",
             "Seafood",
-            "Soft Drinks",
             "Others",
         ],
     )
     product_mrp = st.number_input(
-        "Product MRP", min_value=0.0, max_value=300.0, value=117.08, step=0.01
+        "Product MRP", min_value=0.0, max_value=300.0, value=185.50, step=0.01
     )
 
-  with col2:
+  with col3:
+    st.subheader("Store Attributes & Inferences")
     store_establishment_year = st.number_input(
         "Store Establishment Year",
         min_value=1950,
         max_value=2026,
-        value=2009,
+        value=1999,
         step=1,
     )
-    store_size = st.selectbox("Store Size", ["Small", "Medium", "High"])
+    store_size = st.selectbox("Store Size", ["High", "Medium", "Small"])
     store_location_city_type = st.selectbox(
         "Store Location City Type", ["Tier 1", "Tier 2", "Tier 3"]
     )
+    # Store Type aligned exactly to SuperKart.csv distinct options
     store_type = st.selectbox(
         "Store Type",
         [
-            "Supermarket Type1",
-            "Supermarket Type2",
-            "Supermarket Type3",
-            "Grocery Store",
+            "Departmental Store",
+            "Supermarket Type 1",
+            "Supermarket Type 2",
+            "Supermarket Type 3",
+            "Food Mart",
         ],
     )
 
-    # --- UI-ONLY DYNAMIC DERIVED & INFERRED FIELDS ---
-    # 1. Product Category based on Product ID prefix (FD, DR, NC)
-    pid_prefix = product_id.strip()[:2].upper()
+    # --- UI-ONLY DYNAMIC DERIVED & UNIFORM INFERRED FIELDS ---
     if pid_prefix == "FD":
       product_category = "Food"
     elif pid_prefix == "DR":
       product_category = "Drinks"
-    elif pid_prefix == "NC":
-      product_category = "Non-Consumable"
     else:
-      product_category = "General / Other"
+      product_category = "Non-Consumable"
 
-    # 2. Product Type Category (Perishable vs Non-Perishable)
     perishable_types = [
         "Fruits and Vegetables",
         "Meat",
@@ -119,7 +126,6 @@ with tabs[0]:
         "Perishable" if product_type in perishable_types else "Non-Perishable"
     )
 
-    # 3. Price Range based on Product MRP ('Budget', 'Mid-Range', 'High-End', 'Luxury')
     if product_mrp < 70:
       price_range = "Budget"
     elif product_mrp < 140:
@@ -129,19 +135,18 @@ with tabs[0]:
     else:
       price_range = "Luxury"
 
-    # 4. Store Age calculation
     current_year = 2026
     store_age = current_year - int(store_establishment_year)
 
-    st.markdown("### 📊 UI-Inferred Attributes (Read-Only)")
+    st.markdown("##### 📊 UI-Inferred Attributes (Read-Only)")
     st.text_input(
-        "Product Category (from ID)",
+        "Product Category",
         value=product_category,
         disabled=True,
         key="derived_category",
     )
     st.text_input(
-        "Product Type Category",
+        "Type Category",
         value=product_type_category,
         disabled=True,
         key="derived_type_category",
@@ -153,7 +158,7 @@ with tabs[0]:
         key="derived_price_range",
     )
     st.text_input(
-        "Store Age (Years)",
+        "Store Age",
         value=f"{store_age} years",
         disabled=True,
         key="derived_store_age",
@@ -196,17 +201,30 @@ with tabs[1]:
   st.markdown("Paste a JSON array of multiple records matching the schema.")
 
   default_json = json.dumps(
-      [{
-          "Product_Weight": 12.66,
-          "Product_Sugar_Content": "Low Sugar",
-          "Product_Allocated_Area": 0.027,
-          "Product_Type": "Frozen Foods",
-          "Product_MRP": 117.08,
-          "Store_Establishment_Year": 2009,
-          "Store_Size": "Medium",
-          "Store_Location_City_Type": "Tier 2",
-          "Store_Type": "Supermarket Type2",
-      }],
+      [
+          {
+              "Product_Weight": 15.30,
+              "Product_Sugar_Content": "Regular",
+              "Product_Allocated_Area": 0.054321,
+              "Product_Type": "Soft Drinks",
+              "Product_MRP": 185.50,
+              "Store_Establishment_Year": 1999,
+              "Store_Size": "High",
+              "Store_Location_City_Type": "Tier 1",
+              "Store_Type": "Supermarket Type 1",
+          },
+          {
+              "Product_Weight": 8.21,
+              "Product_Sugar_Content": "No Sugar",
+              "Product_Allocated_Area": 0.012456,
+              "Product_Type": "Snack Foods",
+              "Product_MRP": 56.40,
+              "Store_Establishment_Year": 2007,
+              "Store_Size": "Small",
+              "Store_Location_City_Type": "Tier 3",
+              "Store_Type": "Departmental Store",
+          },
+      ],
       indent=4,
   )
 
