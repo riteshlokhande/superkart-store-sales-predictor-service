@@ -180,7 +180,8 @@ with tabs[0]:
   submit_button = st.button("Predict Sales", type="primary", use_container_width=True)
 
   if submit_button:
-    payload = {
+    # Wrap in list since backend processes arrays of records
+    payload = [{
         "Product_Weight": product_weight,
         "Product_Sugar_Content": product_sugar_content,
         "Product_Allocated_Area": product_allocated_area,
@@ -190,20 +191,25 @@ with tabs[0]:
         "Store_Size": store_size,
         "Store_Location_City_Type": store_location_city_type,
         "Store_Type": store_type,
-    }
+    }]
 
     try:
       response = requests.post(f"{BACKEND_URL}/predict", json=payload)
       if response.status_code == 200:
         result = response.json()
-        sales_prediction = result.get(
-            "prediction", result.get("predicted_sales", 0.0)
-        )
-        st.success("Prediction Successful!")
-        st.metric(
-            label="Predicted Product Store Sales Total",
-            value=f"${sales_prediction:,.2f}",
-        )
+        if result.get("status") == "success":
+            # Predictions are returned as a list; extract the first one for the single record
+            predictions = result.get("predictions", [0.0])
+            sales_prediction = predictions[0] if predictions else 0.0
+            
+            st.success("Prediction Successful!")
+            st.metric(
+                label="Predicted Product Store Sales Total",
+                value=f"${sales_prediction:,.2f}",
+            )
+        else:
+            st.error("Backend successfully responded, but reported a failure status.")
+            st.json(result)
       else:
         st.error(f"Backend Error ({response.status_code}): {response.text}")
     except Exception as e:
@@ -248,8 +254,21 @@ with tabs[1]:
       parsed_json = json.loads(json_input)
       response = requests.post(f"{BACKEND_URL}/predict", json=parsed_json)
       if response.status_code == 200:
-        st.success("Batch Prediction Successful!")
-        st.json(response.json())
+        result = response.json()
+        if result.get("status") == "success":
+            record_count = result.get("record_count", 0)
+            st.success(f"Batch Prediction Successful! Processed {record_count} records.")
+            
+            # Combine the parsed input JSON with the returned predictions for a clean display
+            df_results = pd.DataFrame(parsed_json)
+            df_results["Predicted_Sales_Total"] = result.get("predictions", [])
+            
+            st.dataframe(df_results)
+            with st.expander("View Raw Backend Response"):
+                st.json(result)
+        else:
+             st.error("Backend successfully responded, but reported a failure status.")
+             st.json(result)
       else:
         st.error(f"Backend Error ({response.status_code}): {response.text}")
     except json.JSONDecodeError as jde:
@@ -273,21 +292,26 @@ with tabs[2]:
       try:
         response = requests.post(f"{BACKEND_URL}/predict-file", files=files)
         if response.status_code == 200:
-          st.success("File Prediction Successful!")
           result_data = response.json()
-          if "predictions" in result_data:
-            df["Predicted_Product_Store_Sales_Total"] = result_data[
-                "predictions"
-            ]
+          
+          if result_data.get("status") == "success" and "predictions" in result_data:
+            filename = result_data.get("filename", uploaded_file.name)
+            record_count = result_data.get("record_count", 0)
+            
+            st.success(f"File '{filename}' Prediction Successful! Processed {record_count} records.")
+            
+            df["Predicted_Product_Store_Sales_Total"] = result_data["predictions"]
             st.dataframe(df.head(10))
+            
             csv_download = df.to_csv(index=False).encode("utf-8")
             st.download_button(
                 label="Download Predictions CSV",
                 data=csv_download,
-                file_name="predicted_superkart_results.csv",
+                file_name=f"predicted_{filename}",
                 mime="text/csv",
             )
           else:
+            st.error("The API response did not indicate success or was missing predictions.")
             st.json(result_data)
         else:
           st.error(f"Backend Error ({response.status_code}): {response.text}")
