@@ -290,7 +290,7 @@ with tabs[2]:
     if st.button("Process CSV Predictions"):
       files = {"file": (uploaded_file.name, uploaded_file.getvalue(), "text/csv")}
       try:
-        response = requests.post(f"{BACKEND_URL}/predict-file", files=files)
+        response = requests.post(f"{BACKEND_URL}/predict-batch", files=files)
         if response.status_code == 200:
           result_data = response.json()
           
