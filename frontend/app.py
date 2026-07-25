@@ -1,4 +1,3 @@
-%%writefile frontend_files/app.py
 import streamlit as st
 import requests
 import pandas as pd
@@ -44,18 +43,18 @@ with tab1:
     if input_method == "Interactive Form":
         with st.form("prediction_form"):
             col1, col2, col3 = st.columns(3)
-            
+
             with col1:
                 product_weight = st.number_input("Product_Weight", value=12.35)
                 product_allocated_area = st.number_input("Product_Allocated_Area", value=0.05)
                 product_mrp = st.number_input("Product_MRP", value=141.61)
                 store_age_years = st.number_input("Store_Age_Years", value=15, step=1)
-            
+
             with col2:
                 product_sugar_content = st.selectbox("Product_Sugar_Content", ["Regular","Low Sugar", "No Sugar"])
                 product_id_char = st.selectbox("Product_Id_char", ["Food", "Drinks", "Non-Consumable"])
                 product_type_category = st.selectbox("Product_Type_Category", ["Perishable", "Non-Perishable"])
-            
+
             with col3:
                 store_size = st.selectbox("Store_Size", ["Medium", "High", "Small"])
                 store_location_city_type = st.selectbox("Store_Location_City_Type", ["Tier 1", "Tier 2", "Tier 3"])
@@ -134,13 +133,13 @@ with tab2:
             try:
                 uploaded_file.seek(0)
                 files = {'file': (uploaded_file.name, uploaded_file.getvalue(), 'text/csv')}
-                
+
                 res = requests.post(f"{backend_url}/predict-batch", files=files)
-                
+
                 if res.status_code == 200:
                     batch_result = res.json()
                     st.success(f"Successfully processed {batch_result.get('record_count')} records from `{batch_result.get('filename')}`!")
-                    
+
                     df_preview['Predicted_Sales'] = batch_result.get('predictions')
                     st.subheader("Prediction Results:")
                     st.dataframe(df_preview, use_container_width=True)
