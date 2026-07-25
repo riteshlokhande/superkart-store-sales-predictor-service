@@ -1,8 +1,8 @@
-import streamlit as st
 from datetime import datetime
 import json
 import pandas as pd
 import requests
+import streamlit as st
 
 # Backend service URL configured for the Docker bridge network
 BACKEND_URL = "http://backend:7860"
@@ -23,17 +23,6 @@ tabs = st.tabs(["Single Record Form", "Batch JSON Input", "CSV File Upload"])
 with tabs[0]:
   st.header("Single Record Inference")
   st.markdown(
-<<<<<<< HEAD
-      "Enter product and store attributes below. Derived fields and UI-only"
-      " inferences update dynamically in real-time."
-  )
-
-  # 3-column layout for a uniform and balanced dashboard appearance
-  col1, col2, col3 = st.columns(3)
-
-  with col1:
-    st.subheader("Product Attributes")
-=======
       "Enter product and store attributes below. Derived fields dynamically "
       "update in the designated read-only section based on your inputs."
   )
@@ -43,7 +32,6 @@ with tabs[0]:
 
   with col1:
     st.subheader("Product Basics")
->>>>>>> 3dde140e5fcf88a58e412a60993672665aa30639
     pid_prefix = st.selectbox(
         "Product ID Prefix",
         options=["FD", "DR", "NC"],
@@ -62,20 +50,7 @@ with tabs[0]:
     )
 
   with col2:
-<<<<<<< HEAD
-    st.subheader("Pricing & Classification")
-    # Unrounded Product Allocated Area (retaining exact precision up to 6 decimal places)
-    product_allocated_area = st.number_input(
-        "Product Allocated Area",
-        min_value=0.0,
-        max_value=1.0,
-        value=0.054321,
-        step=0.000001,
-        format="%.6f",
-    )
-=======
     st.subheader("Product Details")
->>>>>>> 3dde140e5fcf88a58e412a60993672665aa30639
     product_type = st.selectbox(
         "Product Type",
         [
@@ -94,8 +69,6 @@ with tabs[0]:
             "Others",
         ],
     )
-<<<<<<< HEAD
-=======
     # Unrounded Product Allocated Area (retaining precision)
     product_allocated_area = st.number_input(
         "Product Allocated Area",
@@ -105,28 +78,12 @@ with tabs[0]:
         step=0.000001,
         format="%.6f",
     )
->>>>>>> 3dde140e5fcf88a58e412a60993672665aa30639
     product_mrp = st.number_input(
         "Product MRP", min_value=0.0, max_value=300.0, value=185.50, step=0.01
     )
 
   with col3:
-<<<<<<< HEAD
-    st.subheader("Store Attributes & Inferences")
-    store_establishment_year = st.number_input(
-        "Store Establishment Year",
-        min_value=1950,
-        max_value=2026,
-        value=1999,
-        step=1,
-    )
-    store_size = st.selectbox("Store Size", ["High", "Medium", "Small"])
-    store_location_city_type = st.selectbox(
-        "Store Location City Type", ["Tier 1", "Tier 2", "Tier 3"]
-    )
-=======
     st.subheader("Store Attributes")
->>>>>>> 3dde140e5fcf88a58e412a60993672665aa30639
     # Store Type aligned exactly to SuperKart.csv distinct options
     store_type = st.selectbox(
         "Store Type",
@@ -138,41 +95,6 @@ with tabs[0]:
             "Food Mart",
         ],
     )
-<<<<<<< HEAD
-
-    # --- UI-ONLY DYNAMIC DERIVED & UNIFORM INFERRED FIELDS ---
-    if pid_prefix == "FD":
-      product_category = "Food"
-    elif pid_prefix == "DR":
-      product_category = "Drinks"
-    else:
-      product_category = "Non-Consumable"
-
-    perishable_types = [
-        "Fruits and Vegetables",
-        "Meat",
-        "Dairy",
-        "Seafood",
-        "Breads",
-    ]
-    product_type_category = (
-        "Perishable" if product_type in perishable_types else "Non-Perishable"
-    )
-
-    if product_mrp < 70:
-      price_range = "Budget"
-    elif product_mrp < 140:
-      price_range = "Mid-Range"
-    elif product_mrp < 210:
-      price_range = "High-End"
-    else:
-      price_range = "Luxury"
-
-    current_year = 2026
-    store_age = current_year - int(store_establishment_year)
-
-    st.markdown("##### 📊 UI-Inferred Attributes (Read-Only)")
-=======
     store_establishment_year = st.number_input(
         "Store Establishment Year",
         min_value=1950,
@@ -226,37 +148,27 @@ with tabs[0]:
   ro_col1, ro_col2, ro_col3, ro_col4 = st.columns(4)
 
   with ro_col1:
->>>>>>> 3dde140e5fcf88a58e412a60993672665aa30639
     st.text_input(
         "Product Category",
         value=product_category,
         disabled=True,
         key="derived_category",
     )
-<<<<<<< HEAD
-=======
   with ro_col2:
->>>>>>> 3dde140e5fcf88a58e412a60993672665aa30639
     st.text_input(
         "Type Category",
         value=product_type_category,
         disabled=True,
         key="derived_type_category",
     )
-<<<<<<< HEAD
-=======
   with ro_col3:
->>>>>>> 3dde140e5fcf88a58e412a60993672665aa30639
     st.text_input(
         "Price Range",
         value=price_range,
         disabled=True,
         key="derived_price_range",
     )
-<<<<<<< HEAD
-=======
   with ro_col4:
->>>>>>> 3dde140e5fcf88a58e412a60993672665aa30639
     st.text_input(
         "Store Age",
         value=f"{store_age} years",
@@ -264,12 +176,8 @@ with tabs[0]:
         key="derived_store_age",
     )
 
-<<<<<<< HEAD
-  submit_button = st.button("Predict Sales", type="primary")
-=======
   st.write("") # small spacing
   submit_button = st.button("Predict Sales", type="primary", use_container_width=True)
->>>>>>> 3dde140e5fcf88a58e412a60993672665aa30639
 
   if submit_button:
     payload = {
